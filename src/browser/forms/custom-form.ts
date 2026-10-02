@@ -8,7 +8,7 @@ import {CustomFormSuggestionEnum} from './enums';
 let formEl: HTMLDivElement | null = null;
 let selectedText = '';
 
-const COMMENT_MAX_LENGTH = 255;
+const COMMENT_MAX_LENGTH = 1000;
 const CONTACT_MAX_LENGTH = 255;
 
 const formStyles: Record<string, string> = {
