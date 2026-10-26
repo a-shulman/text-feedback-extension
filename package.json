@@ -41,11 +41,11 @@
     "@diplodoc/cli": ">=5"
   },
   "devDependencies": {
-    "@diplodoc/cli": "5.36.0",
+    "@diplodoc/cli": "5.52.0",
     "@diplodoc/tsconfig": "^1.0.2",
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^2.0.0",
-    "esbuild": "^0.27.2",
+    "esbuild": "^0.28.1",
     "npm-run-all": "^4.1.5",
     "typescript": "^5.5.3",
     "vitest": "^2.0.0"
