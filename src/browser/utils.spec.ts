@@ -44,6 +44,14 @@ describe('sanitizeInput', () => {
         );
     });
 
+    it('trims surrounding whitespace before escaping', () => {
+        expect(sanitizeInput('  a/b \n')).toBe('a&#x2F;b');
+    });
+
+    it('makes escaped string longer than the raw input', () => {
+        expect(sanitizeInput('/'.repeat(10))).toHaveLength(60);
+    });
+
     it('truncates input longer than 5000 characters', () => {
         expect(sanitizeInput('a'.repeat(6000))).toHaveLength(5000);
     });

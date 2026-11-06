@@ -61,6 +61,7 @@ export function sanitizeInput(text: unknown): string {
     if (typeof text !== 'string') return '';
 
     return text
+        .trim()
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
