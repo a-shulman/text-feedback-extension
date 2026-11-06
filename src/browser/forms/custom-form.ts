@@ -8,8 +8,20 @@ import {CustomFormSuggestionEnum} from './enums';
 let formEl: HTMLDivElement | null = null;
 let selectedText = '';
 
+// Лимиты бэкенда на длину ПОСЛЕ sanitizeInput: каждый из символов / < > " '
+// превращается в HTML-сущность из 5–6 символов. Проверяем ту же строку,
+// которую отправим на бэкенд, иначе бэкенд отклонит отзыв
 const COMMENT_MAX_LENGTH = 1000;
+// Минимум считаем по исходному тексту без пробелов по краям
+const COMMENT_MIN_LENGTH = 5;
 const CONTACT_MAX_LENGTH = 255;
+
+function tooLongMessage(field: string, sentLength: number, max: number): string {
+    return (
+        `${field} слишком длинный: сократите его на ${sentLength - max} симв. ` +
+        `Символы / < > " ' считаются за 5–6 символов`
+    );
+}
 
 const formStyles: Record<string, string> = {
     position: 'fixed',
@@ -130,10 +142,11 @@ function createForm(): HTMLDivElement {
         const target = e.target as HTMLTextAreaElement;
         if (target.id === 'selection-comment') {
             const errorElement = form.querySelector<HTMLDivElement>('#comment-error');
-            if (target.value.length > COMMENT_MAX_LENGTH) {
+            const sentLength = sanitizeInput(target.value).length;
+            if (sentLength > COMMENT_MAX_LENGTH) {
                 target.style.borderColor = 'var(--g-color-base-brand)';
                 if (errorElement) {
-                    errorElement.textContent = `Максимальное количество символов в комментарии - ${COMMENT_MAX_LENGTH}`;
+                    errorElement.textContent = tooLongMessage('Комментарий', sentLength, COMMENT_MAX_LENGTH);
                     errorElement.style.display = 'block';
                 }
             } else {
@@ -147,10 +160,11 @@ function createForm(): HTMLDivElement {
         }
         if (target.id === 'selection-contact') {
             const errorElement = form.querySelector<HTMLDivElement>('#contact-error');
-            if (target.value.length > CONTACT_MAX_LENGTH) {
+            const sentLength = sanitizeInput(target.value).length;
+            if (sentLength > CONTACT_MAX_LENGTH) {
                 target.style.borderColor = 'var(--g-color-base-brand)';
                 if (errorElement) {
-                    errorElement.textContent = `Максимальное количество символов в контакте - ${CONTACT_MAX_LENGTH}`;
+                    errorElement.textContent = tooLongMessage('Контакт', sentLength, CONTACT_MAX_LENGTH);
                     errorElement.style.display = 'block';
                 }
             } else {
@@ -194,8 +208,8 @@ function updateSubmitButton(form: HTMLDivElement): void {
     const hasContact = (contactEl?.value ?? '').trim().length > 0;
     const hasConsent = consentEl?.checked ?? false;
     const exceedsLimit =
-        (commentEl?.value.length ?? 0) > COMMENT_MAX_LENGTH ||
-        (contactEl?.value.length ?? 0) > CONTACT_MAX_LENGTH;
+        sanitizeInput(commentEl?.value ?? '').length > COMMENT_MAX_LENGTH ||
+        sanitizeInput(contactEl?.value ?? '').length > CONTACT_MAX_LENGTH;
     // Disable submit when contact is filled but consent is not given, or a field exceeds its length limit
     const disabled = (hasContact && !hasConsent) || exceedsLimit;
 
@@ -269,9 +283,12 @@ async function handleSubmit(): Promise<void> {
         return;
     }
 
-    if (comment && comment.length < 5) {
+    // Минимум считаем ДО экранирования: иначе «<<» (2 символа) превратится
+    // в «&lt;&lt;» (8 символов) и пройдет проверку
+    const rawCommentLength = (commentEl?.value ?? '').trim().length;
+    if (comment && rawCommentLength < COMMENT_MIN_LENGTH) {
         if (errorEl) {
-            errorEl.textContent = 'Комментарий должен содержать не менее 5 символов';
+            errorEl.textContent = `Комментарий должен содержать не менее ${COMMENT_MIN_LENGTH} символов`;
             errorEl.style.display = 'block';
         }
         if (commentEl) {
@@ -282,7 +299,7 @@ async function handleSubmit(): Promise<void> {
 
     if (comment.length > COMMENT_MAX_LENGTH) {
         if (errorEl) {
-            errorEl.textContent = `Максимальное количество символов в комментарии - ${COMMENT_MAX_LENGTH}`;
+            errorEl.textContent = tooLongMessage('Комментарий', comment.length, COMMENT_MAX_LENGTH);
             errorEl.style.display = 'block';
         }
         if (commentEl) {
@@ -294,7 +311,7 @@ async function handleSubmit(): Promise<void> {
     if (contact.length > CONTACT_MAX_LENGTH) {
         const contactErrorEl = formEl!.querySelector<HTMLDivElement>('#contact-error');
         if (contactErrorEl) {
-            contactErrorEl.textContent = `Максимальное количество символов в контакте - ${CONTACT_MAX_LENGTH}`;
+            contactErrorEl.textContent = tooLongMessage('Контакт', contact.length, CONTACT_MAX_LENGTH);
             contactErrorEl.style.display = 'block';
         }
         if (contactEl) {
